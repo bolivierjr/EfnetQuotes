@@ -11,21 +11,23 @@ import supybot.callbacks as callbacks
 import sqlite3
 from sqlite3 import Error
 import os
-from datetime import datetime
 import calendar
+from datetime import datetime
+
 try:
     from supybot.i18n import PluginInternationalization
     _ = PluginInternationalization('EfnetQuotes')
 except ImportError:
-    # Placeholder that allows to run the plugin on a bot
-    # without the i18n module
+    """
+    Placeholder that allows to run the plugin on a bot
+    without the i18n module
+    """
     def _(x): return x
 
 
 class EfnetQuotes(callbacks.Plugin):
     """A list of channel quotes that you can add, remove or call randomly."""
     threaded = True
-    db_file = '{0}/data/efnetquotes.db'.format(os.getcwd())
 
     def create_database(self, irc, db_file):
         conn = None
@@ -56,8 +58,9 @@ class EfnetQuotes(callbacks.Plugin):
 
     def connect(self, irc):
         """create a database connection to a SQLite3 database"""
+        full_path = os.path.dirname(os.path.abspath(__file__))
+        db_file = '{0}/data/efnetquotes.db'.format(full_path)
 
-        db_file = EfnetQuotes.db_file
         conn = None
 
         try:
@@ -71,6 +74,7 @@ class EfnetQuotes(callbacks.Plugin):
 
         except IOError as e:
             irc.reply('No database found. Creating new database...')
+            print(e)
             self.create_database(irc, db_file)
 
         except Error as e:
