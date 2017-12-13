@@ -114,6 +114,9 @@ class EfnetQuotes(callbacks.Plugin):
         except Error as e:
             print(e)
 
+        except AttributeError as e:
+            irc.reply('Now try add the quote again!')
+
         finally:
             if conn is not None:
                 conn.close()
