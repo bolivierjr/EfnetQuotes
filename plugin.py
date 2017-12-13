@@ -42,8 +42,9 @@ class EfnetQuotes(callbacks.Plugin):
                            quote TEXT NOT NULL,
                            channel TEXT NOT NULL,
                            timestamp INT DEFAULT NULL);''')
-
+            conn.commit()
             cursor.close()
+            print('database created.')
 
         except Error as e:
             print(e)
@@ -75,11 +76,6 @@ class EfnetQuotes(callbacks.Plugin):
         except Error as e:
             print(e)
 
-        finally:
-            if conn is not None:
-                conn.close()
-                print('Database connection closed..')
-
     def addquote(self, irc, msg, args, text):
         """<quote>
         Use this command to add a quote to the bot.
@@ -87,8 +83,6 @@ class EfnetQuotes(callbacks.Plugin):
         conn = None
 
         try:
-            conn = self.connect(irc)
-
             msg = str(msg).split(' ')
             host = msg[0][1:]
             nick = host.split('!')[0]
@@ -102,8 +96,17 @@ class EfnetQuotes(callbacks.Plugin):
                 print('You must be in a channel to add a quote.')
                 return
 
-            
-           
+            sql = '''INSERT INTO quotes (nick,host,quote,channel,timestamp)
+                  VALUES(?,?,?,?,?)'''
+
+            conn = self.connect(irc)
+            cursor = conn.cursor()
+            cursor.execute(sql, (nick, host, text, channel, timestamp))
+            conn.commit()
+            cursor.close()
+            print('Quote inserted into the database.')
+            irc.reply('Quote added.')
+
         except Error as e:
             print(e)
 
@@ -113,13 +116,6 @@ class EfnetQuotes(callbacks.Plugin):
                 print('Closing database connection...')
 
     addquote = wrap(addquote, ['text'])
-
-
-
-
-
-
-
 
 
 Class = EfnetQuotes
