@@ -47,7 +47,7 @@ __author__ = supybot.Author('Bruce Olivier', 'bolivierjr@gmail.com')
 __contributors__ = {}
 
 # This is a url where the most recent plugin package can be downloaded.
-__url__ = ''
+__url__ = 'https://github.com/bolivierjr'
 
 from . import config
 from . import plugin

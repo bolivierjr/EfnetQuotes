@@ -11,6 +11,8 @@ import supybot.callbacks as callbacks
 import sqlite3
 from sqlite3 import Error
 import os
+from datetime import datetime
+import calendar
 try:
     from supybot.i18n import PluginInternationalization
     _ = PluginInternationalization('EfnetQuotes')
@@ -36,6 +38,7 @@ class EfnetQuotes(callbacks.Plugin):
             cursor.execute('''CREATE TABLE IF NOT EXISTS quotes (
                            id INTEGER PRIMARY KEY,
                            nick TEXT NOT NULL,
+                           host TEXT NOT NULL,
                            quote TEXT NOT NULL,
                            channel TEXT NOT NULL,
                            timestamp INT DEFAULT NULL);''')
@@ -75,7 +78,48 @@ class EfnetQuotes(callbacks.Plugin):
         finally:
             if conn is not None:
                 conn.close()
-                print('Database connection closed.')
+                print('Database connection closed..')
+
+    def addquote(self, irc, msg, args, text):
+        """<quote>
+        Use this command to add a quote to the bot.
+        """
+        conn = None
+
+        try:
+            conn = self.connect(irc)
+
+            msg = str(msg).split(' ')
+            host = msg[0][1:]
+            nick = host.split('!')[0]
+            channel = msg[2]
+            now = datetime.utcnow()
+            timestamp = calendar.timegm(now.utctimetuple())
+
+            if channel.startswith('#'):
+                pass
+            else:
+                print('You must be in a channel to add a quote.')
+                return
+
+            
+           
+        except Error as e:
+            print(e)
+
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Closing database connection...')
+
+    addquote = wrap(addquote, ['text'])
+
+
+
+
+
+
+
 
 
 Class = EfnetQuotes
