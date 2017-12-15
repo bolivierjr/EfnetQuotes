@@ -4,7 +4,7 @@
 #
 
 import supybot.utils as utils
-from supybot.commands import *
+import supybot.commands as commands
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
@@ -46,7 +46,7 @@ class EfnetQuotes(callbacks.Plugin):
                            timestamp INT DEFAULT NULL);''')
             conn.commit()
             cursor.close()
-            print('database created.')
+            print('Database created.')
 
         except Error as e:
             print(e)
@@ -94,18 +94,16 @@ class EfnetQuotes(callbacks.Plugin):
             now = datetime.utcnow()
             timestamp = calendar.timegm(now.utctimetuple())
 
-            if channel.startswith('#'):
-                pass
-            else:
+            if not channel.startswith('#'):
                 print('You must be in a channel to add a quote.')
                 return
 
-            sql = '''INSERT INTO quotes (nick,host,quote,channel,timestamp)
-                  VALUES(?,?,?,?,?)'''
+            sql = """INSERT INTO quotes (nick,host,quote,channel,timestamp)
+                  VALUES(?,?,?,?,?)"""
 
             conn = self.connect(irc)
             cursor = conn.cursor()
-            cursor.execute(sql, (nick, host, text, channel, timestamp))
+            cursor.execute(sql, (nick, host, text, channel, timestamp,))
             conn.commit()
             cursor.close()
             print('Quote inserted into the database.')
@@ -116,13 +114,60 @@ class EfnetQuotes(callbacks.Plugin):
 
         except AttributeError as e:
             irc.reply('Now try add the quote again!')
+            print(e)
 
         finally:
             if conn is not None:
                 conn.close()
                 print('Closing database connection...')
 
-    addquote = wrap(addquote, ['text'])
+    addquote = commands.wrap(addquote, ['text'])
+
+    def quote(self, irc, msg, args, text):
+        """- optional <argument>
+        Use this command to randomly search for quotes.
+        """
+        conn = None
+        try:
+            msg = str(msg).split(' ')
+            nick = msg[0][1:].split('!')[0]
+            channel = msg[2]
+            search = '%{0}%'.format(text)
+
+            conn = self.connect(irc)
+            cursor = conn.cursor()
+
+            if not channel.startswith('#'):
+                irc.reply('You must be in the channel to use this command')
+                return
+
+            if text is not None:
+                sql = """SELECT id,nick,quote,channel FROM quotes WHERE channel=?
+                      AND quote LIKE ? ORDER BY random() LIMIT 1;"""
+                cursor.execute(sql, (channel, search,))
+            else:
+                sql = """SELECT id,nick,quote,channel FROM quotes WHERE channel=?
+                      ORDER BY random() LIMIT 1;"""
+                cursor.execute(sql, (channel,))
+
+            quote = cursor.fetchone()
+
+            if quote is not None:
+                irc.reply('#{0}: {1}'.format(quote[0], quote[2]))
+            else:
+                irc.reply('No matches/quotes.')
+
+            cursor.close()
+
+        except Error as e:
+            print(e)
+
+        finally:
+            if conn is not None:
+                conn.close()
+                print('Closing database connection...')
+
+    quote = commands.wrap(quote, [commands.optional('text')])
 
 
 Class = EfnetQuotes
