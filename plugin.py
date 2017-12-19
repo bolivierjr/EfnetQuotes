@@ -155,22 +155,31 @@ class EfnetQuotes(callbacks.Plugin):
 
             """
             Checking to see if there is an argument or no argument sent with
-            the command. Making sure the command is called in a channel and not 
-            private chat Checking to see if there is an argument or no argument
-            sent with the command.
+            the command. If argument, is the user searching for a quote # or
+            quote text. Making sure the command is called in a channel and not
+            private chat.
             """
             if not channel.startswith('#'):
                 irc.reply('You must be in the channel to use this command')
                 return
 
             elif text is not None:
-                sql = """SELECT id,nick,quote,channel FROM {0} WHERE channel=?
-                            AND (id LIKE ? OR quote LIKE ?) ORDER BY random()
-                            LIMIT 1;""".format(table)
 
-                cursor.execute(sql, (channel, text, search,))
+                if text.isdigit():
+                    sql = """SELECT id,quote FROM {0} WHERE
+                                channel=? AND id=?""".format(table)
+
+                    cursor.execute(sql, (channel, text,))
+
+                else:
+                    sql = """SELECT id,quote FROM {0} WHERE channel=?
+                                AND (id LIKE ? OR quote LIKE ?) ORDER BY random()
+                                LIMIT 1;""".format(table)
+
+                    cursor.execute(sql, (channel, text, search,))
+
             else:
-                sql = """SELECT id,nick,quote,channel FROM {0} WHERE channel=?
+                sql = """SELECT id,quote FROM {0} WHERE channel=?
                             ORDER BY random() LIMIT 1;""".format(table)
 
                 cursor.execute(sql, (channel,))
@@ -182,7 +191,7 @@ class EfnetQuotes(callbacks.Plugin):
             back a query or no matches.
             """
             if quote is not None:
-                irc.reply('#{0}: {1}'.format(quote[0], quote[2]))
+                irc.reply('#{0}: {1}'.format(quote[0], quote[1]))
             else:
                 irc.reply('No matches/quotes.')
 
